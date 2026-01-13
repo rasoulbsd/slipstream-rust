@@ -43,11 +43,13 @@ Run the server:
 
 ```
 cargo run -p slipstream-server -- \
-  --dns-listen-port 8853 \
+  --dns-listen-port 53 \
   --target-address 127.0.0.1:5201 \
-  --domain example.com \
+  --domain slipstream.meonme.ir \
   --cert ./cert.pem \
-  --key ./key.pem
+  --key ./key.pem \
+  --normalize-case \
+  --mtu 900
 ```
 
 Run the client:
@@ -56,8 +58,15 @@ Run the client:
 cargo run -p slipstream-client -- \
   --tcp-listen-port 7000 \
   --resolver 127.0.0.1:8853 \
-  --domain example.com
+  --domain example.com \
+  --mtu 800 \
+  --max-subdomain-length 101
 ```
+
+**New Features:**
+- `--normalize-case` / `--no-normalize-case`: Handle DNS case randomization (default: enabled)
+- `--mtu <value>`: Configure QUIC MTU size (server default: 900, client: computed from domain)
+- `--max-subdomain-length <value>`: Limit subdomain length to bypass GFW restrictions (recommended: 101 for Iran)
 
 Note: You can also run the client against a resolver that forwards to the server. For local testing, see the interop docs.
 

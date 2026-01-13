@@ -3,7 +3,7 @@ use slipstream_core::{
     tcp::{stream_read_limit_chunks, tcp_send_buffer_bytes},
     HostPort,
 };
-use slipstream_dns::{build_qname, decode_response, encode_query, QueryParams, CLASS_IN, RR_TXT};
+use slipstream_dns::{build_qname_with_max_subdomain_length, decode_response, encode_query, QueryParams, CLASS_IN, RR_TXT};
 use slipstream_ffi::{
     configure_quic,
     picoquic::{
@@ -158,7 +158,14 @@ enum Command {
 
 pub async fn run_client(config: &ClientConfig<'_>) -> Result<i32, ClientError> {
     let domain_len = config.domain.len();
-    let mtu = compute_mtu(domain_len)?;
+    let mtu = if let Some(mtu_override) = config.mtu {
+        if mtu_override == 0 {
+            return Err(ClientError::new("MTU must be greater than 0"));
+        }
+        mtu_override
+    } else {
+        compute_mtu(domain_len)?
+    };
     let mut resolvers = resolve_resolvers(config.resolvers)?;
     if resolvers.is_empty() {
         return Err(ClientError::new("At least one resolver is required"));
@@ -390,7 +397,7 @@ pub async fn run_client(config: &ClientConfig<'_>) -> Result<i32, ClientError> {
             debug.send_packets = debug.send_packets.saturating_add(1);
             debug.send_bytes = debug.send_bytes.saturating_add(send_length as u64);
 
-            let qname = build_qname(&send_buf[..send_length], config.domain)
+            let qname = build_qname_with_max_subdomain_length(&send_buf[..send_length], config.domain, config.max_subdomain_length)
                 .map_err(|err| ClientError::new(err.to_string()))?;
             let params = QueryParams {
                 id: dns_id,
@@ -1011,7 +1018,7 @@ async fn send_poll_queries(
         debug.send_bytes = debug.send_bytes.saturating_add(send_length as u64);
         debug.polls_sent = debug.polls_sent.saturating_add(1);
 
-        let qname = build_qname(&send_buf[..send_length], config.domain)
+        let qname = build_qname_with_max_subdomain_length(&send_buf[..send_length], config.domain, config.max_subdomain_length)
             .map_err(|err| ClientError::new(err.to_string()))?;
         let params = QueryParams {
             id: *dns_id,

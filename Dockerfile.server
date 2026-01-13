@@ -1,0 +1,39 @@
+FROM rust:latest as builder
+
+RUN apt-get update && apt-get install -y \
+    cmake \
+    pkg-config \
+    libssl-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+COPY scripts ./scripts
+
+RUN if [ ! -d "vendor/picoquic" ] || [ -z "$(ls -A vendor/picoquic 2>/dev/null)" ]; then \
+    mkdir -p vendor && \
+    git clone --depth 1 https://github.com/Mygod/slipstream-picoquic.git vendor/picoquic || \
+    (echo "Warning: Could not clone picoquic, trying to use existing vendor/picoquic" && ls -la vendor/ || true); \
+    fi && \
+    sed -i 's/\r$//' scripts/build_picoquic.sh 2>/dev/null || true && \
+    chmod +x scripts/build_picoquic.sh && \
+    cargo build -p slipstream-server --release
+
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /build/target/release/slipstream-server /app/slipstream-server
+COPY scripts/interop/tcp_echo.py /app/tcp_echo.py
+
+EXPOSE 53/udp 5201/tcp
+
+CMD ["/app/slipstream-server", "--dns-listen-port", "53", "--target-address", "echo:5201", "--domain", "slipstream.meonme.ir", "--cert", "/app/certs/cert.pem", "--key", "/app/certs/key.pem"]

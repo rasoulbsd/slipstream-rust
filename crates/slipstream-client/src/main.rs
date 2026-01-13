@@ -40,6 +40,10 @@ struct Args {
     debug_poll: bool,
     #[arg(long = "debug-streams")]
     debug_streams: bool,
+    #[arg(long = "mtu", help = "Override computed MTU (default: computed from domain length)")]
+    mtu: Option<u32>,
+    #[arg(long = "max-subdomain-length", help = "Maximum subdomain length in characters (default: unlimited, recommended: 101 for GFW regions)")]
+    max_subdomain_length: Option<usize>,
 }
 
 fn main() {
@@ -83,6 +87,8 @@ fn main() {
         keep_alive_interval: args.keep_alive_interval as usize,
         debug_poll: args.debug_poll,
         debug_streams: args.debug_streams,
+        mtu: args.mtu,
+        max_subdomain_length: args.max_subdomain_length,
     };
 
     let runtime = Builder::new_current_thread()

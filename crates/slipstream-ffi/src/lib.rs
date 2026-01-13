@@ -13,6 +13,8 @@ pub struct ClientConfig<'a> {
     pub keep_alive_interval: usize,
     pub debug_poll: bool,
     pub debug_streams: bool,
+    pub mtu: Option<u32>,
+    pub max_subdomain_length: Option<usize>,
 }
 
 pub use runtime::{

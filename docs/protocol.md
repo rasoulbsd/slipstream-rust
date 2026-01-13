@@ -13,6 +13,8 @@ codec is intentionally minimal and focused on speed and compatibility.
 - Base32 alphabet: RFC4648 (A-Z2-7), uppercase, no padding.
 - Encoding: no padding, no hex alphabet.
 - Decoding: case-insensitive and removes all '.' characters before decoding.
+  The server normalizes the base32 subdomain to uppercase before decoding to
+  handle DNS query case randomization (e.g., from GFW/censorship systems).
 - Inline dot insertion: insert '.' every 57 characters from the right so labels
   are <= 57 chars.
 
@@ -61,9 +63,11 @@ codec is intentionally minimal and focused on speed and compatibility.
 - If QDCOUNT != 1: respond with FORMAT_ERROR.
 - If QTYPE != TXT: respond with NAME_ERROR (ignore query).
 - If the QNAME subdomain is empty: respond with NAME_ERROR.
+- The server normalizes the domain part to lowercase for matching and the base32
+  subdomain part to uppercase before decoding to handle case randomization.
 - If base32 decode fails: respond with SERVER_FAILURE.
 - If the DNS parser fails (decode error): drop the message (no response).
-- The server must verify that QNAME ends with .domain.; if not, respond with NAME_ERROR.
+- The server must verify that QNAME ends with .domain. (case-insensitive); if not, respond with NAME_ERROR.
 
 ## Client-side decode rules
 

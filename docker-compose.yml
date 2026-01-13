@@ -1,0 +1,56 @@
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: slipstream-server
+    ports:
+      - "8853:53/udp"
+      - "5201:5201/tcp"
+    volumes:
+      - ./certs:/app/certs:ro
+    environment:
+      - DOMAIN=slipstream.meonme.ir
+      - DNS_LISTEN_PORT=53
+      - TARGET_ADDRESS=echo:5201
+    depends_on:
+      - echo
+    networks:
+      - slipstream-net
+    restart: unless-stopped
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: slipstream-client
+    ports:
+      - "7000:7000/tcp"
+    environment:
+      - DOMAIN=slipstream.meonme.ir
+      - TCP_LISTEN_PORT=7000
+      - RESOLVER=server:53
+    extra_hosts:
+      - "server:127.0.0.1"
+    depends_on:
+      - server
+    networks:
+      - slipstream-net
+    restart: unless-stopped
+
+  echo:
+    image: python:3.11-slim
+    container_name: slipstream-echo
+    command: python3 /app/tcp_echo.py --listen 0.0.0.0:5201
+    volumes:
+      - ./scripts/interop/tcp_echo.py:/app/tcp_echo.py:ro
+    expose:
+      - "5201"
+    networks:
+      - slipstream-net
+    restart: unless-stopped
+
+networks:
+  slipstream-net:
+    driver: bridge

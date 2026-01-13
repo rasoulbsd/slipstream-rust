@@ -33,7 +33,6 @@ use tokio::time::sleep;
 const SLIPSTREAM_ALPN: &str = "picoquic_sample";
 const DNS_MAX_QUERY_SIZE: usize = 512;
 const IDLE_SLEEP_MS: u64 = 10;
-const QUIC_MTU: u32 = 900;
 const STREAM_READ_CHUNK_BYTES: usize = 4096;
 const DEFAULT_TCP_RCVBUF_BYTES: usize = 256 * 1024;
 const TARGET_WRITE_COALESCE_DEFAULT_BYTES: usize = 256 * 1024;
@@ -74,6 +73,8 @@ pub struct ServerConfig {
     pub domain: String,
     pub debug_streams: bool,
     pub debug_commands: bool,
+    pub normalize_case: bool,
+    pub mtu: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -256,7 +257,7 @@ pub async fn run_server(config: &ServerConfig) -> Result<i32, ServerError> {
                 "Slipstream server congestion algorithm is unavailable",
             ));
         }
-        configure_quic_with_custom(quic, slipstream_server_cc_algorithm, QUIC_MTU);
+        configure_quic_with_custom(quic, slipstream_server_cc_algorithm, config.mtu);
     }
 
     let udp = bind_udp_socket(config.dns_listen_port, config.dns_listen_ipv6).await?;
@@ -298,6 +299,7 @@ pub async fn run_server(config: &ServerConfig) -> Result<i32, ServerError> {
                     loop_time,
                     &local_addr_storage,
                     config.dns_listen_ipv6,
+                    config.normalize_case,
                 )? {
                     slots.push(slot);
                 }
@@ -312,6 +314,7 @@ pub async fn run_server(config: &ServerConfig) -> Result<i32, ServerError> {
                                 loop_time,
                                 &local_addr_storage,
                                 config.dns_listen_ipv6,
+                                config.normalize_case,
                             )? {
                                 slots.push(slot);
                             }
@@ -392,8 +395,9 @@ fn decode_slot(
     current_time: u64,
     local_addr_storage: &libc::sockaddr_storage,
     listen_ipv6: bool,
+    normalize_case: bool,
 ) -> Result<Option<Slot>, ServerError> {
-    match decode_query(packet, domain) {
+    match slipstream_dns::decode_query_with_case_normalization(packet, domain, normalize_case) {
         Ok(query) => {
             let mut peer_storage = dummy_sockaddr_storage(listen_ipv6);
             let mut local_storage = unsafe { std::ptr::read(local_addr_storage) };

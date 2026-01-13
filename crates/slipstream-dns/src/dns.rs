@@ -110,6 +110,14 @@ impl fmt::Display for DnsError {
 impl std::error::Error for DnsError {}
 
 pub fn decode_query(packet: &[u8], domain: &str) -> Result<DecodedQuery, DecodeQueryError> {
+    decode_query_with_case_normalization(packet, domain, true)
+}
+
+pub fn decode_query_with_case_normalization(
+    packet: &[u8],
+    domain: &str,
+    normalize_case: bool,
+) -> Result<DecodedQuery, DecodeQueryError> {
     let header = match parse_header(packet) {
         Some(header) => header,
         None => return Err(DecodeQueryError::Drop),
@@ -179,7 +187,15 @@ pub fn decode_query(packet: &[u8], domain: &str) -> Result<DecodedQuery, DecodeQ
         });
     }
 
-    let payload = match base32::decode(&undotted) {
+    // Normalize base32 subdomain to uppercase to handle GFW case randomization
+    // This ensures consistent decoding even when DNS queries have mixed case
+    let base32_input = if normalize_case {
+        undotted.to_ascii_uppercase()
+    } else {
+        undotted.to_string()
+    };
+
+    let payload = match base32::decode(&base32_input) {
         Ok(payload) => payload,
         Err(_) => {
             return Err(DecodeQueryError::Reply {
@@ -376,11 +392,13 @@ fn extract_subdomain(qname: &str, domain: &str) -> Result<String, Rcode> {
         return Err(Rcode::NameError);
     }
 
-    let suffix = format!(".{}.", domain);
-    if !qname
-        .to_ascii_lowercase()
-        .ends_with(&suffix.to_ascii_lowercase())
-    {
+    // Normalize domain to lowercase for case-insensitive matching
+    // This handles GFW case randomization in the domain part
+    let domain_lower = domain.to_ascii_lowercase();
+    let suffix = format!(".{}.", domain_lower);
+    let qname_lower = qname.to_ascii_lowercase();
+    
+    if !qname_lower.ends_with(&suffix) {
         return Err(Rcode::NameError);
     }
 
@@ -393,6 +411,9 @@ fn extract_subdomain(qname: &str, domain: &str) -> Result<String, Rcode> {
     if subdomain.is_empty() {
         return Err(Rcode::NameError);
     }
+    
+    // Return subdomain as-is; we'll normalize to uppercase before base32 decode
+    // This preserves the original case structure for now
     Ok(subdomain.to_string())
 }
 

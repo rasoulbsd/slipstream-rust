@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  server:
+    command: ["/app/slipstream-server", "--dns-listen-port", "53", "--target-address", "echo:5201", "--domain", "slipstream.meonme.ir", "--cert", "/app/certs/cert.pem", "--key", "/app/certs/key.pem"]
+    environment:
+      - DOMAIN=slipstream.meonme.ir
+
+  client:
+    command: ["/app/slipstream-client", "--tcp-listen-port", "7000", "--resolver", "1.1.1.1:53", "--domain", "slipstream.meonme.ir"]
+    environment:
+      - DOMAIN=slipstream.meonme.ir
+      - RESOLVER=1.1.1.1:53
