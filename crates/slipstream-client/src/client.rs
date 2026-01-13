@@ -183,6 +183,14 @@ pub async fn run_client(config: &ClientConfig<'_>) -> Result<i32, ClientError> {
             compute_mtu(domain_len)?
         }
     };
+    eprintln!("Using MTU: {} bytes", mtu);
+    if let Some(max_subdomain_len) = config.max_subdomain_length {
+        use slipstream_dns::max_payload_len_for_domain_with_max_subdomain;
+        if let Ok(max_payload) = max_payload_len_for_domain_with_max_subdomain(config.domain, Some(max_subdomain_len)) {
+            eprintln!("Max subdomain length: {} chars, max payload per DNS query: {} bytes", max_subdomain_len, max_payload);
+        }
+    }
+    
     let mut resolvers = resolve_resolvers(config.resolvers)?;
     if resolvers.is_empty() {
         return Err(ClientError::new("At least one resolver is required"));

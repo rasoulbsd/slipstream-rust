@@ -251,6 +251,9 @@ pub async fn run_server(config: &ServerConfig) -> Result<i32, ServerError> {
         return Err(ServerError::new("Could not create QUIC context"));
     }
     let _quic_guard = QuicGuard::new(quic);
+    eprintln!("Server MTU: {} bytes", config.mtu);
+    eprintln!("Domain: {}", config.domain);
+    eprintln!("Case normalization: {}", if config.normalize_case { "enabled" } else { "disabled" });
     unsafe {
         if slipstream_server_cc_algorithm.is_null() {
             return Err(ServerError::new(
