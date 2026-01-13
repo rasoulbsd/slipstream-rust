@@ -28,8 +28,10 @@ struct Args {
     #[arg(long = "debug-commands")]
     debug_commands: bool,
     #[arg(long = "normalize-case", default_value_t = true)]
-    #[arg(long = "no-normalize-case", action = clap::ArgAction::SetFalse, overrides_with = "normalize-case")]
     normalize_case: bool,
+    
+    #[arg(long = "no-normalize-case", action = clap::ArgAction::SetTrue, conflicts_with = "normalize_case")]
+    no_normalize_case: bool,
     #[arg(long = "mtu", default_value_t = 900, help = "QUIC MTU size (default: 900)")]
     mtu: u32,
 }
@@ -70,7 +72,7 @@ fn main() {
         domain,
         debug_streams: args.debug_streams,
         debug_commands: args.debug_commands,
-        normalize_case: args.normalize_case,
+        normalize_case: if args.no_normalize_case { false } else { args.normalize_case },
         mtu: args.mtu,
     };
 

@@ -5,7 +5,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DOMAIN="${DOMAIN:-slipstream.meonme.ir}"
+DOMAIN="${DOMAIN:-slipstream.example.com}"
 TCP_PORT="${TCP_PORT:-7000}"
 TEST_TIMEOUT="${TEST_TIMEOUT:-15}"
 CONNECTION_WAIT="${CONNECTION_WAIT:-7}"

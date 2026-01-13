@@ -35,4 +35,4 @@ COPY --from=builder /build/target/release/slipstream-client /app/slipstream-clie
 
 EXPOSE 7000/tcp
 
-CMD ["/app/slipstream-client", "--tcp-listen-port", "7000", "--resolver", "server:53", "--domain", "slipstream.meonme.ir"]
+CMD ["/app/slipstream-client", "--tcp-listen-port", "7000", "--resolver", "server:53", "--domain", "slipstream.example.com"]

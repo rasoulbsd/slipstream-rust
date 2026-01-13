@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent.parent
-DOMAIN = os.environ.get("DOMAIN", "slipstream.meonme.ir")
+DOMAIN = os.environ.get("DOMAIN", "slipstream.example.com")
 TCP_PORT = int(os.environ.get("TCP_PORT", "7000"))
 TEST_TIMEOUT = int(os.environ.get("TEST_TIMEOUT", "10"))
 

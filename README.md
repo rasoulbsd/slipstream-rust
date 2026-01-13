@@ -45,7 +45,7 @@ Run the server:
 cargo run -p slipstream-server -- \
   --dns-listen-port 53 \
   --target-address 127.0.0.1:5201 \
-  --domain slipstream.meonme.ir \
+  --domain slipstream.example.com \
   --cert ./cert.pem \
   --key ./key.pem \
   --normalize-case \

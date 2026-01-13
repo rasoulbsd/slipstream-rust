@@ -8,7 +8,7 @@ This guide sets up a DNS forwarder that works with Cloudflare, allowing you to u
 [Client] 
   ↓ DNS queries to 1.1.1.1 or your DNS server
 [Cloudflare DNS / Your DNS Server]
-  ↓ Queries for slipstream.meonme.ir
+  ↓ Queries for slipstream.example.com
 [DNS Forwarder on Server]
   ↓ Forwards to 127.0.0.1:53
 [slipstream-server]
@@ -70,8 +70,8 @@ listen-address=0.0.0.0
 # Port (default is 53)
 port=53
 
-# Forward queries for slipstream.meonme.ir to slipstream-server
-server=/slipstream.meonme.ir/127.0.0.1#53
+# Forward queries for slipstream.example.com to slipstream-server
+server=/slipstream.example.com/127.0.0.1#53
 
 # Use upstream DNS for other queries
 server=1.1.1.1
@@ -119,7 +119,7 @@ sudo nano /etc/bind/named.conf.options
 options {
     directory "/var/cache/bind";
     
-    // Forward queries for slipstream.meonme.ir to slipstream-server
+    // Forward queries for slipstream.example.com to slipstream-server
     forwarders {
         127.0.0.1 port 53;  // slipstream-server
     };
@@ -161,7 +161,7 @@ sudo nano /etc/bind/named.conf.local
 ```
 
 ```conf
-zone "slipstream.meonme.ir" {
+zone "slipstream.example.com" {
     type forward;
     forwarders { 127.0.0.1 port 53; };
 };
@@ -194,10 +194,10 @@ You have two approaches:
 2. Add an **NS record**:
    - Type: `NS`
    - Name: `slipstream` (or leave blank for subdomain delegation)
-   - Content: `ns.meonme.ir` (or your server's hostname)
+   - Content: `ns.example.com` (or your server's hostname)
    - TTL: Auto
 
-3. Make sure you have an A record for `ns.meonme.ir` pointing to your server IP:
+3. Make sure you have an A record for `ns.example.com` pointing to your server IP:
    - Type: `A`
    - Name: `ns`
    - Content: `77.42.91.123`
@@ -216,7 +216,7 @@ Make sure slipstream-server is running on port 53 (or the port your DNS forwarde
 sudo ./target/release/slipstream-server \
   --dns-listen-port 53 \
   --target-address 127.0.0.1:5201 \
-  --domain slipstream.meonme.ir \
+  --domain slipstream.example.com \
   --cert ./cert.pem \
   --key ./key.pem
 ```
@@ -224,7 +224,7 @@ sudo ./target/release/slipstream-server \
 **Important**: If dnsmasq or BIND is using port 53, you have two options:
 
 1. **Run slipstream-server on a different port** (e.g., 5353) and configure the forwarder to use that port:
-   - dnsmasq: `server=/slipstream.meonme.ir/127.0.0.1#5353`
+   - dnsmasq: `server=/slipstream.example.com/127.0.0.1#5353`
    - BIND: `forwarders { 127.0.0.1 port 5353; };`
 
 2. **Run slipstream-server first**, then configure dnsmasq/BIND to forward to it (they'll need to use a different port or you'll need to coordinate)
@@ -238,13 +238,13 @@ Now you can use Cloudflare DNS or your DNS server:
 ./target/release/slipstream-client \
   --tcp-listen-port 7000 \
   --resolver 1.1.1.1:53 \
-  --domain slipstream.meonme.ir
+  --domain slipstream.example.com
 
 # OR using your DNS server directly
 ./target/release/slipstream-client \
   --tcp-listen-port 7000 \
   --resolver 77.42.91.123:53 \
-  --domain slipstream.meonme.ir
+  --domain slipstream.example.com
 ```
 
 ## Step 5: Testing
@@ -253,13 +253,13 @@ Now you can use Cloudflare DNS or your DNS server:
 
 ```bash
 # Test from client machine
-dig @1.1.1.1 slipstream.meonme.ir
+dig @1.1.1.1 slipstream.example.com
 
 # Test direct query to your DNS server
-dig @77.42.91.123 slipstream.meonme.ir
+dig @77.42.91.123 slipstream.example.com
 
 # Test with a TXT query (what slipstream uses)
-dig @77.42.91.123 TXT test.slipstream.meonme.ir
+dig @77.42.91.123 TXT test.slipstream.example.com
 ```
 
 ### Test the tunnel:
@@ -300,14 +300,14 @@ sudo systemctl stop systemd-resolved
 
 1. Check dnsmasq/BIND configuration points to correct port
 2. Verify slipstream-server is listening: `sudo netstat -ulnp | grep 53`
-3. Test direct query: `dig @127.0.0.1 -p 53 TXT test.slipstream.meonme.ir`
+3. Test direct query: `dig @127.0.0.1 -p 53 TXT test.slipstream.example.com`
 4. Check firewall allows UDP 53
 
 ### Issue: Cloudflare not forwarding queries
 
 - Verify NS records are set correctly
-- Check that `ns.meonme.ir` A record points to server IP
-- Test DNS delegation: `dig @1.1.1.1 NS slipstream.meonme.ir`
+- Check that `ns.example.com` A record points to server IP
+- Test DNS delegation: `dig @1.1.1.1 NS slipstream.example.com`
 - Cloudflare may cache responses; wait for TTL to expire
 
 ### Issue: dnsmasq/BIND conflicts with slipstream-server
@@ -316,12 +316,12 @@ sudo systemctl stop systemd-resolved
 
 ```bash
 # dnsmasq config
-server=/slipstream.meonme.ir/127.0.0.1#5353
+server=/slipstream.example.com/127.0.0.1#5353
 
 # Run slipstream-server
 ./target/release/slipstream-server \
   --dns-listen-port 5353 \
-  --domain slipstream.meonme.ir \
+  --domain slipstream.example.com \
   --cert ./cert.pem \
   --key ./key.pem
 ```

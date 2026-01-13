@@ -3,7 +3,7 @@ use slipstream_core::{
     tcp::{stream_read_limit_chunks, tcp_send_buffer_bytes},
     HostPort,
 };
-use slipstream_dns::{build_qname_with_max_subdomain_length, decode_response, encode_query, QueryParams, CLASS_IN, RR_TXT};
+use slipstream_dns::{build_qname_with_max_subdomain_length, decode_response, encode_query, max_payload_len_for_domain_with_max_subdomain, QueryParams, CLASS_IN, RR_TXT};
 use slipstream_ffi::{
     configure_quic,
     picoquic::{
@@ -158,13 +158,30 @@ enum Command {
 
 pub async fn run_client(config: &ClientConfig<'_>) -> Result<i32, ClientError> {
     let domain_len = config.domain.len();
-    let mtu = if let Some(mtu_override) = config.mtu {
-        if mtu_override == 0 {
-            return Err(ClientError::new("MTU must be greater than 0"));
+    
+    // If max_subdomain_length is set, calculate the maximum MTU that fits
+    let mtu = if let Some(max_subdomain_len) = config.max_subdomain_length {
+        use slipstream_dns::max_payload_len_for_domain_with_max_subdomain;
+        let max_payload = max_payload_len_for_domain_with_max_subdomain(config.domain, Some(max_subdomain_len))
+            .map_err(|err| ClientError::new(format!("Failed to calculate max payload for subdomain length limit: {}", err)))?;
+        // Use the smaller of: user-specified MTU, computed MTU, or max_payload from subdomain limit
+        let computed_mtu = compute_mtu(domain_len)?;
+        let mtu_from_limit = max_payload as u32;
+        let user_mtu = config.mtu.unwrap_or(u32::MAX);
+        let final_mtu = computed_mtu.min(mtu_from_limit).min(user_mtu);
+        if final_mtu == 0 {
+            return Err(ClientError::new("MTU computed to zero; check domain length and max-subdomain-length"));
         }
-        mtu_override
+        final_mtu
     } else {
-        compute_mtu(domain_len)?
+        if let Some(mtu_override) = config.mtu {
+            if mtu_override == 0 {
+                return Err(ClientError::new("MTU must be greater than 0"));
+            }
+            mtu_override
+        } else {
+            compute_mtu(domain_len)?
+        }
     };
     let mut resolvers = resolve_resolvers(config.resolvers)?;
     if resolvers.is_empty() {

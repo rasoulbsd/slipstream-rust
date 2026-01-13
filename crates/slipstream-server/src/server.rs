@@ -4,7 +4,7 @@ use slipstream_core::{
     HostPort,
 };
 use slipstream_dns::{
-    decode_query, encode_response, DecodeQueryError, Question, Rcode, ResponseParams,
+    encode_response, DecodeQueryError, Question, Rcode, ResponseParams,
 };
 use slipstream_ffi::picoquic::{
     picoquic_call_back_event_t, picoquic_close, picoquic_close_immediate, picoquic_cnx_t,

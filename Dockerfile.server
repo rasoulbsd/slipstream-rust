@@ -36,4 +36,4 @@ COPY scripts/interop/tcp_echo.py /app/tcp_echo.py
 
 EXPOSE 53/udp 5201/tcp
 
-CMD ["/app/slipstream-server", "--dns-listen-port", "53", "--target-address", "echo:5201", "--domain", "slipstream.meonme.ir", "--cert", "/app/certs/cert.pem", "--key", "/app/certs/key.pem"]
+CMD ["/app/slipstream-server", "--dns-listen-port", "53", "--target-address", "echo:5201", "--domain", "slipstream.example.com", "--cert", "/app/certs/cert.pem", "--key", "/app/certs/key.pem"]

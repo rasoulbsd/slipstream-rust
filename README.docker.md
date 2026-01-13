@@ -16,7 +16,7 @@ This guide explains how to run slipstream-server and slipstream-client using Doc
 # Generate certificates for your domain
 openssl req -x509 -newkey rsa:2048 -nodes \
   -keyout certs/key.pem -out certs/cert.pem -days 365 \
-  -subj "/CN=slipstream.meonme.ir"
+  -subj "/CN=slipstream.example.com"
 
 # Or use the Python script
 python3 generate_certs.py
@@ -53,13 +53,13 @@ Edit `docker-compose.yml` or create `docker-compose.override.yml`:
 services:
   server:
     environment:
-      - DOMAIN=slipstream.meonme.ir
+      - DOMAIN=slipstream.example.com
       - DNS_LISTEN_PORT=53
       - TARGET_ADDRESS=echo:5201
   
   client:
     environment:
-      - DOMAIN=slipstream.meonme.ir
+      - DOMAIN=slipstream.example.com
       - RESOLVER=server:53
       - TCP_LISTEN_PORT=7000
 ```

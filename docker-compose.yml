@@ -11,7 +11,7 @@ services:
     volumes:
       - ./certs:/app/certs:ro
     environment:
-      - DOMAIN=slipstream.meonme.ir
+      - DOMAIN=slipstream.example.com
       - DNS_LISTEN_PORT=53
       - TARGET_ADDRESS=echo:5201
     depends_on:
@@ -28,7 +28,7 @@ services:
     ports:
       - "7000:7000/tcp"
     environment:
-      - DOMAIN=slipstream.meonme.ir
+      - DOMAIN=slipstream.example.com
       - TCP_LISTEN_PORT=7000
       - RESOLVER=server:53
     extra_hosts:
